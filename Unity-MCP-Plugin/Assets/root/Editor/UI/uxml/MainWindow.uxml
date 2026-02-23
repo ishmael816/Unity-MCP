@@ -70,11 +70,11 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <!-- Point 3: AI Agent -->
-                <ui:VisualElement name="TimelinePointAiAgent" class="timeline-point timeline-point-last">
+                <ui:VisualElement name="TimelinePointAiAgent" class="timeline-point timeline-point-last" style="">
                     <ui:VisualElement class="timeline-indicator">
                         <ui:VisualElement name="aiAgentStatusCircle" class="status-indicator-circle status-indicator-circle-disconnected" />
                     </ui:VisualElement>
-                    <ui:VisualElement class="timeline-content">
+                    <ui:VisualElement class="timeline-content" style="align-items: flex-start; margin-top: -3px; min-height: 0;">
                         <ui:VisualElement name="aiAgentLabelsContainer" />
                     </ui:VisualElement>
                 </ui:VisualElement>
