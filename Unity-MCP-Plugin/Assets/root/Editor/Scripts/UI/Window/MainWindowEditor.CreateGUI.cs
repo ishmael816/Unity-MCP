@@ -10,6 +10,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using com.IvanMurzak.McpPlugin.Common.Model;
 using com.IvanMurzak.McpPlugin.Common.Utils;
@@ -55,7 +56,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
         private const string URL_GitHubIssues = "https://github.com/IvanMurzak/Unity-MCP/issues";
         private const string URL_Discord = "https://discord.gg/cfbdMZX99G";
 
-        private Label? _labelAiAgentStatus;
+        private VisualElement? _aiAgentLabelsContainer;
         private VisualElement? _aiAgentStatusCircle;
 
         private DateTime _setMcpServerDataTime;
@@ -108,7 +109,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
             _ => ServerButtonText_Connect
         };
 
-        private void SetAiAgentStatus(bool isConnected, string? label = null)
+        private void SetAiAgentStatus(bool isConnected, IEnumerable<string>? labels = null)
         {
             _setAiAgentDataTime = DateTime.UtcNow;
 
@@ -117,14 +118,31 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                 Logger.LogError("{field} is not initialized, cannot update AI agent status", nameof(_aiAgentStatusCircle));
                 return;
             }
-            if (_labelAiAgentStatus == null)
+            if (_aiAgentLabelsContainer == null)
             {
-                Logger.LogError("{field} is not initialized, cannot update AI agent status", nameof(_labelAiAgentStatus));
+                Logger.LogError("{field} is not initialized, cannot update AI agent status", nameof(_aiAgentLabelsContainer));
                 return;
             }
 
             SetStatusIndicator(_aiAgentStatusCircle, isConnected ? USS_Connected : USS_Disconnected);
-            _labelAiAgentStatus.text = label ?? "AI agent";
+
+            _aiAgentLabelsContainer.Clear();
+            var labelList = labels?.ToList();
+            if (labelList == null || labelList.Count == 0)
+            {
+                var lbl = new Label("AI agent");
+                lbl.AddToClassList("timeline-label");
+                _aiAgentLabelsContainer.Add(lbl);
+            }
+            else
+            {
+                foreach (var text in labelList)
+                {
+                    var lbl = new Label(text);
+                    lbl.AddToClassList("timeline-label");
+                    _aiAgentLabelsContainer.Add(lbl);
+                }
+            }
         }
 
         #endregion
@@ -177,7 +195,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
             var statusCircle = root.Q<VisualElement>("connectionStatusCircle");
             var statusText = root.Q<Label>("connectionStatusText");
 
-            _labelAiAgentStatus = root.Q<Label>("aiAgentLabel");
+            _aiAgentLabelsContainer = root.Q<VisualElement>("aiAgentLabelsContainer");
             _aiAgentStatusCircle = root.Q<VisualElement>("aiAgentStatusCircle");
 
             inputFieldHost.value = UnityMcpPlugin.Host;
@@ -444,15 +462,15 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                     {
                         Logger.LogDebug("On AI agents changed: {count} clients", mcpClients.Count);
 
-                        var aiAgent = mcpClients.LastOrDefault(c => c.IsConnected);
-                        if (aiAgent == null)
+                        var connectedAgents = mcpClients.Where(c => c.IsConnected).ToList();
+                        if (connectedAgents.Count == 0)
                         {
                             Logger.LogDebug("No connected AI agents found in clients list.");
                             SetAiAgentStatus(false);
                             return;
                         }
 
-                        SetAiAgentStatus(true, $"AI agent: {aiAgent.ClientName} ({aiAgent.ClientVersion})");
+                        SetAiAgentStatus(true, connectedAgents.Select(a => $"AI agent: {a.ClientName} ({a.ClientVersion})"));
                     })
                     .AddTo(_disposables);
 
@@ -564,14 +582,16 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                 {
                     if (t.IsCompletedSuccessfully)
                     {
-                        var data = t.Result;
-                        SetAiAgentStatus(data.IsConnected, data.IsConnected
-                            ? $"AI agent: {data.ClientName} ({data.ClientVersion})"
-                            : "AI agent");
+                        var clients = t.Result;
+                        var connectedAgents = clients.Where(c => c.IsConnected).ToList();
+                        var isConnected = connectedAgents.Count > 0;
+                        SetAiAgentStatus(isConnected, isConnected
+                            ? connectedAgents.Select(a => $"AI agent: {a.ClientName} ({a.ClientVersion})")
+                            : null);
 
                         // If AI agent is not connected but Unity is, retry after delay.
                         // The AI agent may need time to re-establish its session after Unity reconnects.
-                        if (!data.IsConnected && retryCount > 0 && UnityMcpPlugin.IsConnected.CurrentValue)
+                        if (!isConnected && retryCount > 0 && UnityMcpPlugin.IsConnected.CurrentValue)
                         {
                             Logger.LogDebug("AI agent not connected yet, scheduling retry ({retriesLeft} left)", retryCount);
                             Observable.Timer(TimeSpan.FromMilliseconds(retryDelayMs))
@@ -587,7 +607,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                     }
                     else
                     {
-                        SetAiAgentStatus(false, "AI agent: Not found");
+                        SetAiAgentStatus(false, new[] { "AI agent: Not found" });
                     }
                 });
             });

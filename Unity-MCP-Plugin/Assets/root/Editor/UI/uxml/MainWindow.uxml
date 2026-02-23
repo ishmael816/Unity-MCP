@@ -75,7 +75,7 @@
                         <ui:VisualElement name="aiAgentStatusCircle" class="status-indicator-circle status-indicator-circle-disconnected" />
                     </ui:VisualElement>
                     <ui:VisualElement class="timeline-content">
-                        <ui:Label text="AI agent" name="aiAgentLabel" class="timeline-label" />
+                        <ui:VisualElement name="aiAgentLabelsContainer" />
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
