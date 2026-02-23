@@ -190,14 +190,14 @@ namespace com.IvanMurzak.Unity.MCP
                 return;
             }
 
-            if (mcpPlugin.RemoteMcpManagerHub == null)
+            if (mcpPlugin.McpManagerHub == null)
             {
                 _logger.LogCritical("{method}: {instance} is null",
-                    nameof(NotifyToolRequestCompleted), nameof(mcpPlugin.RemoteMcpManagerHub));
+                    nameof(NotifyToolRequestCompleted), nameof(mcpPlugin.McpManagerHub));
                 return;
             }
 
-            await mcpPlugin.RemoteMcpManagerHub.NotifyToolRequestCompleted(request);
+            await mcpPlugin.McpManagerHub.NotifyToolRequestCompleted(request);
         }
 
         public static IDisposable SubscribeOnChanged(Action<UnityConnectionConfig> action, bool invokeImmediately = true)

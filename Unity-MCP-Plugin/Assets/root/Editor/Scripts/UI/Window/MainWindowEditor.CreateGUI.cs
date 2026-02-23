@@ -373,15 +373,15 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                 return;
             }
 
-            var remoteMcpManagerHub = mcpPluginInstance.RemoteMcpManagerHub;
-            if (remoteMcpManagerHub == null)
+            var ncpManagerHub = mcpPluginInstance.McpManagerHub;
+            if (ncpManagerHub == null)
             {
-                Logger.LogDebug("Cannot fetch MCP server data: RemoteMcpManagerHub is null");
+                Logger.LogDebug("Cannot fetch MCP server data: McpManagerHub is null");
                 return;
             }
 
             var fetchTime = DateTime.UtcNow;
-            var task = remoteMcpManagerHub.GetMcpServerData();
+            var task = ncpManagerHub.GetMcpServerData();
             if (task == null)
             {
                 Logger.LogDebug("Cannot fetch MCP server data: GetMcpServerData returned null");
@@ -420,23 +420,39 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
             McpPlugin.McpPlugin.DoAlways(plugin =>
             {
                 plugin.McpManager.OnClientConnected
-                    .ObserveOnCurrentSynchronizationContext()
                     .Subscribe(data =>
                     {
-                        Logger.LogInformation("On AI agent connected: {clientName} ({clientVersion})", data.ClientName, data.ClientVersion);
+                        Logger.LogInformation("On AI agent connected: {clientName} ({clientVersion})",
+                            data.ClientName, data.ClientVersion);
+
                         if (Logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Trace))
                             Logger.LogTrace("AI Agent Data: {data}", data.ToPrettyJson());
-
-                        SetAiAgentStatus(data.IsConnected, $"AI agent: {data.ClientName} ({data.ClientVersion})");
                     })
                     .AddTo(_disposables);
 
                 plugin.McpManager.OnClientDisconnected
-                    .ObserveOnCurrentSynchronizationContext()
-                    .Subscribe(_ =>
+                    .Subscribe(mcpClientData =>
                     {
-                        Logger.LogInformation("On AI agent disconnected");
-                        SetAiAgentStatus(false);
+                        Logger.LogInformation("On AI agent disconnected: {clientName} ({clientVersion})",
+                            mcpClientData.ClientName, mcpClientData.ClientVersion);
+                    })
+                    .AddTo(_disposables);
+
+                plugin.McpManager.OnClientsChanged
+                    .ObserveOnCurrentSynchronizationContext()
+                    .Subscribe(mcpClients =>
+                    {
+                        Logger.LogDebug("On AI agents changed: {count} clients", mcpClients.Count);
+
+                        var aiAgent = mcpClients.LastOrDefault(c => c.IsConnected);
+                        if (aiAgent == null)
+                        {
+                            Logger.LogDebug("No connected AI agents found in clients list.");
+                            SetAiAgentStatus(false);
+                            return;
+                        }
+
+                        SetAiAgentStatus(true, $"AI agent: {aiAgent.ClientName} ({aiAgent.ClientVersion})");
                     })
                     .AddTo(_disposables);
 
@@ -521,15 +537,15 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                 return;
             }
 
-            var remoteMcpManagerHub = mcpPluginInstance.RemoteMcpManagerHub;
-            if (remoteMcpManagerHub == null)
+            var ncpManagerHub = mcpPluginInstance.McpManagerHub;
+            if (ncpManagerHub == null)
             {
-                Logger.LogDebug("Cannot fetch AI agent data: RemoteMcpManagerHub is null");
+                Logger.LogDebug("Cannot fetch AI agent data: McpManagerHub is null");
                 return;
             }
 
             var fetchTime = DateTime.UtcNow;
-            var task = remoteMcpManagerHub.GetMcpClientData();
+            var task = ncpManagerHub.GetMcpClientData();
             if (task == null)
             {
                 Logger.LogDebug("Cannot fetch AI agent data: GetMcpClientData returned null");
