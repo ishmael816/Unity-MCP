@@ -11,7 +11,6 @@
 #nullable enable
 using System;
 using com.IvanMurzak.Unity.MCP.Editor.Utils;
-using NUnit.Framework;
 using R3;
 using UnityEngine;
 using UnityEngine.UIElements;

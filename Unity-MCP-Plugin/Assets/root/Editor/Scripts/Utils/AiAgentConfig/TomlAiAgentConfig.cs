@@ -488,8 +488,38 @@ namespace com.IvanMurzak.Unity.MCP.Editor.Utils
                 if (s[pos] == '\\' && pos + 1 < s.Length)
                 {
                     pos++;
-                    sb.Append(s[pos]);
-                    pos++;
+                    switch (s[pos])
+                    {
+                        case 'b':  sb.Append('\b'); pos++; break;
+                        case 't':  sb.Append('\t'); pos++; break;
+                        case 'n':  sb.Append('\n'); pos++; break;
+                        case 'f':  sb.Append('\f'); pos++; break;
+                        case 'r':  sb.Append('\r'); pos++; break;
+                        case '"':  sb.Append('"');  pos++; break;
+                        case '\\': sb.Append('\\'); pos++; break;
+                        case 'u' when pos + 4 < s.Length:
+                        {
+                            var hex = s.Substring(pos + 1, 4);
+                            if (int.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out var cp))
+                                sb.Append((char)cp);
+                            pos += 5;
+                            break;
+                        }
+                        case 'U' when pos + 8 < s.Length:
+                        {
+                            var hex = s.Substring(pos + 1, 8);
+                            if (int.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out var cp))
+                                sb.Append(char.ConvertFromUtf32(cp));
+                            pos += 9;
+                            break;
+                        }
+                        default:
+                            // Invalid escape — preserve as-is (best-effort)
+                            sb.Append('\\');
+                            sb.Append(s[pos]);
+                            pos++;
+                            break;
+                    }
                 }
                 else if (s[pos] == '"')
                 {

@@ -412,10 +412,8 @@ namespace com.IvanMurzak.Unity.MCP.Editor
             };
 
             var authRequired = UnityMcpPlugin.AuthOption == AuthOption.required;
-            if (authRequired && string.IsNullOrEmpty(UnityMcpPlugin.Token))
-            {
+            if (authRequired && !string.IsNullOrEmpty(UnityMcpPlugin.Token))
                 args.Add($"{Args.Token}={UnityMcpPlugin.Token}");
-            }
 
             serverConfig["args"] = args;
 
