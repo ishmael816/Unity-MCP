@@ -81,6 +81,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
             });
 
             // Deployment mode toggles
+            var labelAuthorizationToken = root.Query<Label>("labelAuthorizationToken").First();
             var toggleAuthorizationNone = root.Query<Toggle>("toggleAuthorizationNone").First();
             var toggleAuthorizationRequired = root.Query<Toggle>("toggleAuthorizationRequired").First();
             var inputRemoteToken = root.Query<TextField>("inputRemoteToken").First();
@@ -112,6 +113,11 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                 Debug.LogError("btnGenerateToken not found in UXML.");
                 return;
             }
+
+            if (labelAuthorizationToken != null) labelAuthorizationToken.tooltip = Tooltip_LabelAuthorizationToken;
+            toggleAuthorizationNone.tooltip = Tooltip_ToggleAuthNone;
+            toggleAuthorizationRequired.tooltip = Tooltip_ToggleAuthRequired;
+            btnGenerateToken.tooltip = Tooltip_BtnGenerateToken;
 
             var authOption = UnityMcpPlugin.AuthOption;
             toggleAuthorizationNone.SetValueWithoutNotify(authOption == AuthOption.none);

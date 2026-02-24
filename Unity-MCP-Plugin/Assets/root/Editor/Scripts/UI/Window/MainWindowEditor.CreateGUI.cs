@@ -56,6 +56,100 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
         private const string URL_GitHubIssues = "https://github.com/IvanMurzak/Unity-MCP/issues";
         private const string URL_Discord = "https://discord.gg/cfbdMZX99G";
 
+        // ── Shared tooltip building blocks ──────────────────────────────────────────
+        //
+        // These blocks are embedded verbatim inside the per-element tooltips below so
+        // that each tooltip is self-contained yet the authoritative text lives in one place.
+
+        private const string Tooltip_TransportMethods =
+            "• stdio  —  The AI agent launches the MCP server as its own child process and " +
+            "exchanges messages over stdin/stdout. Only one agent at a time; not recommended " +
+            "unless the AI client has no HTTP support.\n\n" +
+            "• http  —  The AI agent connects over HTTP to a running MCP server. Supports " +
+            "multiple simultaneous agents and remote deployments. Recommended.";
+
+        private const string Tooltip_AuthorizationTokenConcept =
+            "The authorization token is a shared secret key. When required, every AI agent " +
+            "must include this token in its MCP server configuration. The server rejects any " +
+            "connection that does not supply the correct token.\n\n" +
+            "Treat this token like a password — do not share it publicly or commit it to version control.";
+
+        // ── Per-element tooltips ─────────────────────────────────────────────────────
+
+        private const string Tooltip_LabelTransport =
+            "Transport method defines the communication channel between the AI agent and the " +
+            "MCP server. It determines how the agent discovers, launches, and sends messages " +
+            "to the server.\n\n" +
+            "Available methods:\n" +
+            Tooltip_TransportMethods;
+
+        private const string Tooltip_ToggleStdio =
+            "Use STDIO transport.\n\n" +
+            "The AI agent launches the MCP server as its own subprocess and exchanges messages " +
+            "via standard input/output (stdin/stdout) streams.\n\n" +
+            "Limitations:\n" +
+            "  • Only one AI agent instance can connect at a time.\n" +
+            "  • The local MCP server Start / Stop controls are disabled — the AI agent manages " +
+            "the server lifecycle itself.\n" +
+            "  • Some features requiring a persistent long-running server may not function.\n\n" +
+            "Prefer HTTP unless your AI client has no HTTP support.\n\n" +
+            "Transport method overview:\n" +
+            Tooltip_TransportMethods;
+
+        private const string Tooltip_ToggleHttp =
+            "Use HTTP transport (recommended).\n\n" +
+            "The AI agent connects over HTTP to the MCP server already running on this machine " +
+            "(or a remote host if configured).\n\n" +
+            "Advantages:\n" +
+            "  • Multiple AI agents can connect to the same server simultaneously.\n" +
+            "  • Supports remote deployments — the server can run on a different machine.\n" +
+            "  • Full lifecycle control via the Start / Stop button.\n\n" +
+            "Ensure the local MCP server is running before the AI agent attempts to connect.\n\n" +
+            "Transport method overview:\n" +
+            Tooltip_TransportMethods;
+
+        private const string Tooltip_LabelAuthorizationToken =
+            "Controls whether the MCP server requires a secret token to accept connections " +
+            "from AI agents.\n\n" +
+            Tooltip_AuthorizationTokenConcept;
+
+        private const string Tooltip_ToggleAuthNone =
+            "Local deployment — no authorization token required.\n\n" +
+            "The MCP server accepts any connection without checking a token. This is safe when " +
+            "both Unity and the AI agent run on the same machine and the server port is not " +
+            "reachable from the network.\n\n" +
+            "Use this when:\n" +
+            "  • Unity, the MCP server, and the AI agent are all on the same computer.\n" +
+            "  • No other machines need to reach the server.\n\n" +
+            "⚠ Do not use this if the server port is exposed to other machines or the internet.\n\n" +
+            "About authorization tokens:\n" +
+            Tooltip_AuthorizationTokenConcept;
+
+        private const string Tooltip_ToggleAuthRequired =
+            "Remote deployment — authorization token required.\n\n" +
+            "Every AI agent must supply the correct token in its MCP server configuration. " +
+            "The server will reject any connection that does not include a valid token.\n\n" +
+            "Use this when:\n" +
+            "  • The MCP server runs on a different machine from the AI agent.\n" +
+            "  • The server endpoint is reachable over a network.\n\n" +
+            "After enabling, generate a secure token with the 'New' button, then copy it into " +
+            "your AI agent's MCP server configuration.\n\n" +
+            "About authorization tokens:\n" +
+            Tooltip_AuthorizationTokenConcept;
+
+        private const string Tooltip_BtnGenerateToken =
+            "Generate a new cryptographically secure random token.\n\n" +
+            "Uses a cryptographic RNG to produce 32 bytes (256 bits) of randomness encoded as " +
+            "URL-safe Base64 — suitable for production-level authentication.\n\n" +
+            "Steps after generating:\n" +
+            "  1. The new token is saved automatically to your project configuration.\n" +
+            "  2. The MCP server is restarted to apply the new token.\n" +
+            "  3. Copy the token from the input field next to this button.\n" +
+            "  4. Open your AI agent's MCP server configuration and paste the token into the " +
+            "authorization field.\n\n" +
+            "⚠ Generating a new token immediately invalidates the previous one. Every AI agent " +
+            "must be updated with the new token before it can connect again.";
+
         private VisualElement? _aiAgentLabelsContainer;
         private VisualElement? _aiAgentStatusCircle;
 
@@ -488,6 +582,11 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
 
             var toggleOptionHttp = root.Q<Toggle>("toggleOptionHttp") ?? throw new NullReferenceException("Toggle 'toggleOptionHttp' not found in UI.");
             var toggleOptionStdio = root.Q<Toggle>("toggleOptionStdio") ?? throw new NullReferenceException("Toggle 'toggleOptionStdio' not found in UI.");
+
+            var labelTransport = root.Q<Label>("labelTransport");
+            if (labelTransport != null) labelTransport.tooltip = Tooltip_LabelTransport;
+            toggleOptionStdio.tooltip = Tooltip_ToggleStdio;
+            toggleOptionHttp.tooltip = Tooltip_ToggleHttp;
 
             // Initialize with HTTP selected by default
             toggleOptionStdio.value = UnityMcpPlugin.TransportMethod == TransportMethod.stdio;
