@@ -116,14 +116,6 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                 .AddTo(_disposables);
         }
 
-        private static string GenerateToken()
-        {
-            var bytes = new byte[32];
-            using var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(bytes);
-            return Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-        }
-
         void LoadAgentUI(VisualElement container, int selectedIndex)
         {
             // Clear any existing content

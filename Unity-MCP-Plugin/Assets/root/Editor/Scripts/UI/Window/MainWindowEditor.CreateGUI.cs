@@ -484,7 +484,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
 
             btnGenerateToken.RegisterCallback<ClickEvent>(_ =>
             {
-                var newToken = GenerateToken();
+                var newToken = UnityMcpPlugin.GenerateToken();
                 inputAuthorizationToken.SetValueWithoutNotify(newToken);
 
                 var wasRunning = McpServerManager.IsRunning;
