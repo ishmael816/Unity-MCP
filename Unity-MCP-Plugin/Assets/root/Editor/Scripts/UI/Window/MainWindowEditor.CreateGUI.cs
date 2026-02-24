@@ -763,15 +763,15 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                 return;
             }
 
-            var ncpManagerHub = mcpPluginInstance.McpManagerHub;
-            if (ncpManagerHub == null)
+            var mcpManagerHub = mcpPluginInstance.McpManagerHub;
+            if (mcpManagerHub == null)
             {
                 Logger.LogDebug("Cannot fetch AI agent data: McpManagerHub is null");
                 return;
             }
 
             var fetchTime = DateTime.UtcNow;
-            var task = ncpManagerHub.GetMcpClientData();
+            var task = mcpManagerHub.GetMcpClientData();
             if (task == null)
             {
                 Logger.LogDebug("Cannot fetch AI agent data: GetMcpClientData returned null");
