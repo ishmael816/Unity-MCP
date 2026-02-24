@@ -967,16 +967,16 @@ namespace com.IvanMurzak.Unity.MCP.Editor
             var timeout = UnityMcpPlugin.TimeoutMs;
             var transportMethod = TransportMethod.streamableHttp; // always must be streamableHttp for launching the server.
             var token = UnityMcpPlugin.Token;
-            var deploymentMode = UnityMcpPlugin.AuthOption;
+            var authOption = UnityMcpPlugin.AuthOption;
 
             // Arguments format: port=XXXXX plugin-timeout=XXXXX client-transport=<TransportMethod> token=<Token>
             var args =
                 $"{Args.Port}={port} " +
                 $"{Args.PluginTimeout}={timeout} " +
                 $"{Args.ClientTransportMethod}={transportMethod} " +
-                $"{Args.Authorization}={deploymentMode}";
+                $"{Args.Authorization}={authOption}";
 
-            if (deploymentMode == AuthOption.required && !string.IsNullOrEmpty(token))
+            if (authOption == AuthOption.required && !string.IsNullOrEmpty(token))
                 args += $" {Args.Token}={token}";
 
             return args;
