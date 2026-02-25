@@ -12,8 +12,12 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using com.IvanMurzak.McpPlugin;
+using com.IvanMurzak.McpPlugin.Common.Model;
 using com.IvanMurzak.ReflectorNet;
+using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Logging;
 using R3;
 
 namespace com.IvanMurzak.Unity.MCP
@@ -47,7 +51,32 @@ namespace com.IvanMurzak.Unity.MCP
 
         public UnityLogCollector? LogCollector { get; protected set; } = null;
 
-        protected UnityMcpPlugin() { }
+        // --- Connection state ---
+
+        protected readonly ReactiveProperty<HubConnectionState> _connectionState
+            = new(HubConnectionState.Disconnected);
+
+        public ReadOnlyReactiveProperty<HubConnectionState> ConnectionState => _connectionState;
+
+        public ReadOnlyReactiveProperty<bool> IsConnected => _connectionState
+            .Select(x => x == HubConnectionState.Connected)
+            .ToReadOnlyReactiveProperty(false);
+
+        // --- Constructor / Dispose ---
+
+        protected UnityMcpPlugin()
+        {
+            _disposables.Add(_connectionState);
+        }
+
+        public virtual void Dispose()
+        {
+            _disposables.Dispose();
+            // LogCollector and _connectionState are disposed by _disposables
+            LogCollector = null;
+        }
+
+        // --- Log collector ---
 
         public void AddUnityLogCollector(ILogStorage logStorage)
         {
@@ -76,12 +105,126 @@ namespace com.IvanMurzak.Unity.MCP
             LogCollector = null;
         }
 
-        public virtual void Dispose()
+        // --- Connection methods ---
+
+        public Task<bool> ConnectIfNeeded()
         {
-            _disposables.Dispose();
-            // LogCollector is disposed by _disposables
-            LogCollector = null;
+            if (!unityConnectionConfig.KeepConnected)
+                return Task.FromResult(false);
+            return Connect();
         }
+
+        public async Task<bool> Connect()
+        {
+            _logger.LogTrace("{method} called.", nameof(Connect));
+            try
+            {
+                var mcpPlugin = McpPluginInstance;
+                if (mcpPlugin == null)
+                {
+                    _logger.LogError("{method}: McpPlugin instance is null.", nameof(Connect));
+                    return false;
+                }
+                return await mcpPlugin.Connect();
+            }
+            finally
+            {
+                _logger.LogTrace("{method} completed.", nameof(Connect));
+            }
+        }
+
+        public async Task Disconnect()
+        {
+            _logger.LogTrace("{method} called.", nameof(Disconnect));
+            try
+            {
+                var mcpPlugin = McpPluginInstance;
+                if (mcpPlugin == null)
+                {
+                    _logger.LogWarning("{method}: McpPlugin instance is null, nothing to disconnect, ignoring.",
+                        nameof(Disconnect));
+                    return;
+                }
+                try
+                {
+                    _logger.LogDebug("{method}: Disconnecting McpPlugin instance.", nameof(Disconnect));
+                    await mcpPlugin.Disconnect();
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError("{method}: Exception during disconnecting: {exception}",
+                        nameof(Disconnect), e);
+                }
+            }
+            finally
+            {
+                _logger.LogTrace("{method} completed.", nameof(Disconnect));
+            }
+        }
+
+        public void DisconnectImmediate()
+        {
+            _logger.LogTrace("{method} called.", nameof(DisconnectImmediate));
+            try
+            {
+                var mcpPlugin = McpPluginInstance;
+                if (mcpPlugin == null)
+                {
+                    _logger.LogWarning("{method}: McpPlugin instance is null, nothing to disconnect, ignoring.",
+                        nameof(DisconnectImmediate));
+                    return;
+                }
+                try
+                {
+                    _logger.LogDebug("{method}: Disconnecting McpPlugin instance.", nameof(DisconnectImmediate));
+                    mcpPlugin.DisconnectImmediate();
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError("{method}: Exception during disconnecting: {exception}",
+                        nameof(DisconnectImmediate), e);
+                }
+            }
+            finally
+            {
+                _logger.LogTrace("{method} completed.", nameof(DisconnectImmediate));
+            }
+        }
+
+        public async Task NotifyToolRequestCompleted(RequestToolCompletedData request, CancellationToken cancellationToken = default)
+        {
+            var mcpPlugin = McpPluginInstance
+                ?? throw new InvalidOperationException($"{nameof(McpPluginInstance)} is null");
+
+            while (mcpPlugin.ConnectionState.CurrentValue != HubConnectionState.Connected)
+            {
+                await Task.Delay(100, cancellationToken);
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    _logger.LogWarning("{method}: operation cancelled while waiting for connection.",
+                        nameof(NotifyToolRequestCompleted));
+                    return;
+                }
+            }
+
+            if (mcpPlugin.McpManager == null)
+            {
+                _logger.LogCritical("{method}: {instance} is null",
+                    nameof(NotifyToolRequestCompleted), nameof(mcpPlugin.McpManager));
+                return;
+            }
+
+            if (mcpPlugin.McpManagerHub == null)
+            {
+                _logger.LogCritical("{method}: {instance} is null",
+                    nameof(NotifyToolRequestCompleted), nameof(mcpPlugin.McpManagerHub));
+                return;
+            }
+
+            await mcpPlugin.McpManagerHub.NotifyToolRequestCompleted(request);
+        }
+
+        // --- Token / Port utilities ---
 
         /// <summary>
         /// Generates a cryptographically random URL-safe token.

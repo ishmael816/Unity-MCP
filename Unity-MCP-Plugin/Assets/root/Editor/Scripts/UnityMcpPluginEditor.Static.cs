@@ -25,7 +25,6 @@ namespace com.IvanMurzak.Unity.MCP
     using static com.IvanMurzak.McpPlugin.Common.Consts.MCP.Server;
     using ILogger = Microsoft.Extensions.Logging.ILogger;
     using LogLevel = com.IvanMurzak.Unity.MCP.Runtime.Utils.LogLevel;
-    using MicrosoftLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
     public partial class UnityMcpPluginEditor
     {
@@ -159,45 +158,14 @@ namespace com.IvanMurzak.Unity.MCP
             }
         }
 
-        static ReactiveProperty<HubConnectionState> _connectionState = new(HubConnectionState.Disconnected);
-        public static ReadOnlyReactiveProperty<HubConnectionState> ConnectionState => _connectionState;
+        // 'new' is intentional: static dispatch on the subtype, instance logic lives in the base.
+        public static new ReadOnlyReactiveProperty<HubConnectionState> ConnectionState
+            => ((UnityMcpPlugin)Instance).ConnectionState;
+        public static new ReadOnlyReactiveProperty<bool> IsConnected
+            => ((UnityMcpPlugin)Instance).IsConnected;
 
-        public static ReadOnlyReactiveProperty<bool> IsConnected => _connectionState
-            .Select(x => x == HubConnectionState.Connected)
-            .ToReadOnlyReactiveProperty(false);
-
-        public static async Task NotifyToolRequestCompleted(RequestToolCompletedData request, CancellationToken cancellationToken = default)
-        {
-            var mcpPlugin = Instance.McpPluginInstance ?? throw new InvalidOperationException($"{nameof(Instance.McpPluginInstance)} is null");
-
-            // wait when connection will be established
-            while (mcpPlugin.ConnectionState.CurrentValue != HubConnectionState.Connected)
-            {
-                await Task.Delay(100, cancellationToken);
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    _logger.LogWarning("{method}: operation cancelled while waiting for connection.",
-                        nameof(NotifyToolRequestCompleted));
-                    return;
-                }
-            }
-
-            if (mcpPlugin.McpManager == null)
-            {
-                _logger.LogCritical("{method}: {instance} is null",
-                    nameof(NotifyToolRequestCompleted), nameof(mcpPlugin.McpManager));
-                return;
-            }
-
-            if (mcpPlugin.McpManagerHub == null)
-            {
-                _logger.LogCritical("{method}: {instance} is null",
-                    nameof(NotifyToolRequestCompleted), nameof(mcpPlugin.McpManagerHub));
-                return;
-            }
-
-            await mcpPlugin.McpManagerHub.NotifyToolRequestCompleted(request);
-        }
+        public static new Task NotifyToolRequestCompleted(RequestToolCompletedData request, CancellationToken cancellationToken = default)
+            => ((UnityMcpPlugin)Instance).NotifyToolRequestCompleted(request, cancellationToken);
 
         public static IDisposable SubscribeOnChanged(Action<UnityConnectionConfig> action, bool invokeImmediately = true)
         {
@@ -213,116 +181,15 @@ namespace com.IvanMurzak.Unity.MCP
             return subscription;
         }
 
-        public static Task<bool> ConnectIfNeeded()
-        {
-            if (KeepConnected == false)
-                return Task.FromResult(false);
+        public static new Task<bool> ConnectIfNeeded() => ((UnityMcpPlugin)Instance).ConnectIfNeeded();
 
-            return Connect();
-        }
+        public static new Task<bool> Connect() => ((UnityMcpPlugin)Instance).Connect();
 
-        public static async Task<bool> Connect()
-        {
-            _logger.LogTrace("{method} called.",
-                nameof(Connect));
-
-            try
-            {
-                var mcpPlugin = Instance.McpPluginInstance;
-                if (mcpPlugin == null)
-                {
-                    _logger.LogError("{method} isInitialized set <false>.",
-                        nameof(Connect));
-                    return false; // ignore
-                }
-                return await mcpPlugin.Connect();
-            }
-            finally
-            {
-                _logger.LogTrace("{method} completed.",
-                    nameof(Connect));
-            }
-        }
-
-        public async Task Disconnect()
-        {
-            _logger.LogTrace("{method} called.",
-                nameof(Disconnect));
-
-            try
-            {
-                var mcpPlugin = McpPluginInstance;
-                if (mcpPlugin == null)
-                {
-                    _logger.LogWarning("{method}: McpPlugin instance is null, nothing to disconnect, ignoring.",
-                        nameof(Disconnect));
-                    return;
-                }
-                else
-                {
-                    try
-                    {
-                        _logger.LogDebug("{method}: Disconnecting McpPlugin instance.",
-                            nameof(Disconnect));
-                        await mcpPlugin.Disconnect();
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogError("{method}: Exception during disconnecting: {exception}",
-                            nameof(Disconnect), e);
-                        return;
-                    }
-                }
-            }
-            finally
-            {
-                _logger.LogTrace("{method} completed.",
-                    nameof(Disconnect));
-            }
-        }
-
-        public void DisconnectImmediate()
-        {
-            _logger.LogTrace("{method} called.",
-                nameof(DisconnectImmediate));
-
-            try
-            {
-                var mcpPlugin = McpPluginInstance;
-                if (mcpPlugin == null)
-                {
-                    _logger.LogWarning("{method}: McpPlugin instance is null, nothing to disconnect, ignoring.",
-                        nameof(DisconnectImmediate));
-                    return;
-                }
-                else
-                {
-                    try
-                    {
-                        _logger.LogDebug("{method}: Disconnecting McpPlugin instance.",
-                            nameof(DisconnectImmediate));
-                        mcpPlugin.DisconnectImmediate();
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogError("{method}: Exception during disconnecting: {exception}",
-                            nameof(DisconnectImmediate), e);
-                    }
-                }
-            }
-            finally
-            {
-                _logger.LogTrace("{method} completed.",
-                    nameof(DisconnectImmediate));
-            }
-        }
+        // Disconnect() and DisconnectImmediate() are inherited from UnityMcpPlugin base.
 
         public static void StaticDispose()
         {
-            _logger.LogTrace("{method} called.",
-                nameof(StaticDispose));
-
-            _connectionState.Dispose();
+            _logger.LogTrace("{method} called.", nameof(StaticDispose));
 
             lock (_instanceMutex)
             {

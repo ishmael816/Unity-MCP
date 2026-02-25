@@ -10,8 +10,12 @@
 
 #nullable enable
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using com.IvanMurzak.McpPlugin;
+using com.IvanMurzak.McpPlugin.Common.Model;
 using com.IvanMurzak.Unity.MCP.Utils;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using R3;
 
@@ -139,6 +143,33 @@ namespace com.IvanMurzak.Unity.MCP
         {
             try { _onConfigChanged.OnNext(data); }
             catch (Exception e) { _logger.LogError(e, "{method}: exception", nameof(NotifyChanged)); }
+        }
+
+        // --- Connection state (delegates to instance, each plugin has its own connection) ---
+        // 'new' is intentional: static dispatch on the subtype, instance logic lives in the base.
+
+        public static new ReadOnlyReactiveProperty<HubConnectionState> ConnectionState
+            => ((UnityMcpPlugin)Instance).ConnectionState;
+        public static new ReadOnlyReactiveProperty<bool> IsConnected
+            => ((UnityMcpPlugin)Instance).IsConnected;
+
+        public static new Task NotifyToolRequestCompleted(RequestToolCompletedData request, CancellationToken cancellationToken = default)
+            => ((UnityMcpPlugin)Instance).NotifyToolRequestCompleted(request, cancellationToken);
+
+        public static new Task<bool> ConnectIfNeeded() => ((UnityMcpPlugin)Instance).ConnectIfNeeded();
+
+        public static new Task<bool> Connect() => ((UnityMcpPlugin)Instance).Connect();
+
+        // Disconnect() and DisconnectImmediate() are instance methods inherited from UnityMcpPlugin.
+
+        public static void StaticDispose()
+        {
+            _logger.LogTrace("{method} called.", nameof(StaticDispose));
+            lock (_instanceMutex)
+            {
+                _instance?.Dispose();
+                _instance = null!;
+            }
         }
     }
 }
