@@ -477,9 +477,10 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                 if (newToken == UnityMcpPluginEditor.Token)
                     return;
 
-                var wasRunning = McpServerManager.IsRunning;
+                var wasRunning = McpServerManager.IsRunning && UnityMcpPluginEditor.TransportMethod != TransportMethod.stdio;
                 UnityMcpPluginEditor.Token = newToken;
                 UnityMcpPluginEditor.Instance.Save();
+
                 InvalidateAndReloadAgentUI();
                 RestartServerIfWasRunning(wasRunning);
             });
@@ -489,9 +490,10 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                 var newToken = UnityMcpPlugin.GenerateToken();
                 inputAuthorizationToken.SetValueWithoutNotify(newToken);
 
-                var wasRunning = McpServerManager.IsRunning;
+                var wasRunning = McpServerManager.IsRunning && UnityMcpPluginEditor.TransportMethod != TransportMethod.stdio;
                 UnityMcpPluginEditor.Token = newToken;
                 UnityMcpPluginEditor.Instance.Save();
+
                 InvalidateAndReloadAgentUI();
                 RestartServerIfWasRunning(wasRunning);
             });

@@ -9,8 +9,6 @@
 */
 
 #nullable enable
-using System;
-using System.Security.Cryptography;
 using Extensions.Unity.PlayerPrefsEx;
 using Microsoft.Extensions.Logging;
 using R3;
@@ -92,7 +90,14 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                 Logger.LogError($"Cannot reload agent UI: {nameof(aiAgentContainer)} or {nameof(aiAgentDropdown)} is null.");
                 return;
             }
-            LoadAgentUI(aiAgentContainer, AiAgentConfiguratorRegistry.GetAgentNames().IndexOf(aiAgentDropdown.value));
+            var agentNames = AiAgentConfiguratorRegistry.GetAgentNames();
+            var index = agentNames.IndexOf(aiAgentDropdown.value);
+            if (index < 0 && agentNames.Count > 0)
+            {
+                index = 0;
+                aiAgentDropdown.SetValueWithoutNotify(agentNames[index]);
+            }
+            LoadAgentUI(aiAgentContainer, index);
         }
 
         private static void SetTokenFieldsVisible(TextField tokenField, VisualElement actionsRow, bool visible)

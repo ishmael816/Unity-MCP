@@ -45,6 +45,9 @@ while [[ $# -gt 0 ]]; do
             done
             if [ "$is_runtime" = false ]; then
                 echo "Unknown argument: $1"
+                echo "Usage: $0 [Debug|Release] [-c|--configuration <config>] [*.csproj] [runtime...]"
+                echo "Known runtimes: ${all_runtimes[*]}"
+                exit 1
             fi
             shift
             ;;
