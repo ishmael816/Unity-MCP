@@ -11,6 +11,7 @@
 #nullable enable
 
 using System;
+using com.IvanMurzak.McpPlugin;
 using com.IvanMurzak.ReflectorNet;
 using R3;
 
@@ -82,11 +83,22 @@ namespace com.IvanMurzak.Unity.MCP
 
         public void DisposeMcpPluginInstance()
         {
+            IMcpPlugin? oldInstance;
             lock (buildMutex)
             {
-                mcpPluginInstance?.Dispose();
+                oldInstance = mcpPluginInstance;
                 mcpPluginInstance = null;
             }
+
+            if (oldInstance == null)
+                return;
+
+            // Dispose on a background thread to avoid blocking Unity's main thread.
+            // The dispose path calls ConnectionManager.DisconnectImmediate() which
+            // internally blocks on a semaphore (_gate) held by a pending Connect()
+            // task whose continuation is queued on the main thread SynchronizationContext —
+            // a deadlock if we block the main thread here.
+            _ = System.Threading.Tasks.Task.Run(() => oldInstance.Dispose());
         }
 
         public void DisposeLogCollector()

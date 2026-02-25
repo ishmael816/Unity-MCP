@@ -15,7 +15,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using UnityEngine;
 
 namespace com.IvanMurzak.Unity.MCP
 {
@@ -24,9 +23,7 @@ namespace com.IvanMurzak.Unity.MCP
         public static string ResourcesFileName => "AI-Game-Developer-Config";
         public static string AssetsFilePath => $"UserSettings/{ResourcesFileName}.json";
 #if UNITY_EDITOR
-        public static TextAsset AssetFile => UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(AssetsFilePath);
-        public static void InvalidateAssetFile() => UnityEditor.AssetDatabase.ImportAsset(AssetsFilePath, UnityEditor.ImportAssetOptions.ForceUpdate);
-        public static void MarkAssetFileDirty() => UnityEditor.EditorUtility.SetDirty(AssetFile);
+        public static UnityEngine.TextAsset AssetFile => UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.TextAsset>(AssetsFilePath);
 #endif
 
         UnityConnectionConfig GetOrCreateConfig() => GetOrCreateConfig(out _);
@@ -36,13 +33,11 @@ namespace com.IvanMurzak.Unity.MCP
             try
             {
 #if UNITY_EDITOR
-                var json = Application.isPlaying
-                    ? UnityEngine.Resources.Load<TextAsset>(ResourcesFileName).text
-                    : File.Exists(AssetsFilePath)
-                        ? File.ReadAllText(AssetsFilePath)
-                        : null;
+                // Both Edit mode and Play mode read from the same UserSettings JSON file
+                var json = File.Exists(AssetsFilePath) ? File.ReadAllText(AssetsFilePath) : null;
 #else
-                var json = UnityEngine.Resources.Load<TextAsset>(ResourcesFileName).text;
+                // Game build: no JSON file — use C# initialization via UnityMcpPlugin.Initialize()
+                var json = (string?)null;
 #endif
                 UnityConnectionConfig? config = null;
                 try
@@ -61,9 +56,13 @@ namespace com.IvanMurzak.Unity.MCP
                 }
                 if (config == null)
                 {
+#if UNITY_EDITOR
                     _logger.LogWarning("{method}: <color=orange><b>Creating {file}</b> file at <i>{path}</i></color>",
                         nameof(GetOrCreateConfig), ResourcesFileName, AssetsFilePath);
-
+#else
+                    _logger.LogWarning("{method}: No config file found. Call UnityMcpPlugin.Initialize() to configure the plugin for game builds.",
+                        nameof(GetOrCreateConfig));
+#endif
                     config = new UnityConnectionConfig();
                     wasCreated = true;
                 }

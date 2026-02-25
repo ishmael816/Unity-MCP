@@ -84,6 +84,28 @@ namespace com.IvanMurzak.Unity.MCP
             }
         }
 
+        internal void BuildFromMcpPluginBuilder(IMcpPluginBuilder builder)
+        {
+            _logger.LogTrace("{method} called.", nameof(BuildFromMcpPluginBuilder));
+
+            lock (buildMutex)
+            {
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                mcpPluginInstance = builder.Build(CreateDefaultReflector());
+                stopwatch.Stop();
+                _logger.LogDebug("MCP Plugin built in {elapsedMilliseconds} ms.",
+                    stopwatch.ElapsedMilliseconds);
+
+                ApplyConfigToMcpPlugin(mcpPluginInstance);
+
+                mcpPluginInstance.ConnectionState
+                    .Subscribe(state => _connectionState.Value = state)
+                    .AddTo(_disposables);
+            }
+
+            _logger.LogTrace("{method} completed.", nameof(BuildFromMcpPluginBuilder));
+        }
+
         protected virtual McpPlugin.Common.Version BuildVersion()
         {
             return new McpPlugin.Common.Version
