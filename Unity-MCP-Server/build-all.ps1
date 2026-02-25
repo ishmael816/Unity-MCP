@@ -153,4 +153,7 @@ if ($zipFailed -eq 0) {
             Write-Host "  $($zipFile.Name) ($sizeKB KB)" -ForegroundColor White
         }
     }
+} else {
+    Write-Host "`n❌ $zipFailed zip archive(s) failed to create. See errors above." -ForegroundColor Red
+    exit 1
 }
