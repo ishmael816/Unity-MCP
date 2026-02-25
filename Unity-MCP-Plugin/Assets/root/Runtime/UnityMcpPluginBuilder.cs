@@ -82,10 +82,7 @@ namespace com.IvanMurzak.Unity.MCP
                     "ReflectorNet",
                     "com.IvanMurzak.Unity.MCP.TestFiles",
                     "com.IvanMurzak.Unity.MCP.Editor.Tests",
-                    "com.IvanMurzak.Unity.MCP.Tests")
-                .WithToolsFromAssembly(AssemblyUtils.AllAssemblies)
-                .WithPromptsFromAssembly(AssemblyUtils.AllAssemblies)
-                .WithResourcesFromAssembly(AssemblyUtils.AllAssemblies);
+                    "com.IvanMurzak.Unity.MCP.Tests");
         }
 
         /// <summary>
