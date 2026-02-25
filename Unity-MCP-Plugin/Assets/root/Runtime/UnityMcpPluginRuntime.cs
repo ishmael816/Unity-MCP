@@ -22,11 +22,6 @@ namespace com.IvanMurzak.Unity.MCP
     /// </summary>
     public partial class UnityMcpPluginRuntime : UnityMcpPlugin
     {
-        protected readonly McpPluginSlot _plugin = new();
-
-        public IMcpPlugin? McpPluginInstance => _plugin.Instance;
-        public bool HasMcpPluginInstance => _plugin.HasInstance;
-
         protected UnityMcpPluginRuntime(UnityConnectionConfig? config = null) : base()
         {
             unityConnectionConfig = config ?? new UnityConnectionConfig();

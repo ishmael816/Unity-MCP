@@ -10,9 +10,6 @@
 
 #nullable enable
 
-using com.IvanMurzak.McpPlugin;
-using com.IvanMurzak.ReflectorNet;
-
 namespace com.IvanMurzak.Unity.MCP
 {
     /// <summary>
@@ -22,16 +19,6 @@ namespace com.IvanMurzak.Unity.MCP
     /// </summary>
     public partial class UnityMcpPluginEditor : UnityMcpPlugin
     {
-        protected readonly McpPluginSlot _plugin = new();
-
-        public IMcpPlugin? McpPluginInstance => _plugin.Instance;
-        public bool HasMcpPluginInstance => _plugin.HasInstance;
-
-        public Reflector? Reflector => McpPluginInstance?.McpManager.Reflector;
-        public IToolManager? Tools => McpPluginInstance?.McpManager.ToolManager;
-        public IPromptManager? Prompts => McpPluginInstance?.McpManager.PromptManager;
-        public IResourceManager? Resources => McpPluginInstance?.McpManager.ResourceManager;
-
         protected UnityMcpPluginEditor() : base()
         {
             var config = GetOrCreateConfig(out var wasCreated);

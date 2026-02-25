@@ -12,6 +12,8 @@
 
 using System;
 using System.Threading;
+using com.IvanMurzak.McpPlugin;
+using com.IvanMurzak.ReflectorNet;
 using R3;
 
 namespace com.IvanMurzak.Unity.MCP
@@ -33,6 +35,15 @@ namespace com.IvanMurzak.Unity.MCP
         public static void ApplyLogLevel(LogLevel level) => _configuredLogLevel = level;
 
         protected readonly CompositeDisposable _disposables = new();
+        protected readonly McpPluginSlot _plugin = new();
+
+        public IMcpPlugin? McpPluginInstance => _plugin.Instance;
+        public bool HasMcpPluginInstance => _plugin.HasInstance;
+
+        public Reflector? Reflector => McpPluginInstance?.McpManager.Reflector;
+        public IToolManager? Tools => McpPluginInstance?.McpManager.ToolManager;
+        public IPromptManager? Prompts => McpPluginInstance?.McpManager.PromptManager;
+        public IResourceManager? Resources => McpPluginInstance?.McpManager.ResourceManager;
 
         public UnityLogCollector? LogCollector { get; protected set; } = null;
 
