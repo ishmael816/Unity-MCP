@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using com.IvanMurzak.McpPlugin.Common.Model;
 using com.IvanMurzak.McpPlugin.Common.Utils;
+using com.IvanMurzak.McpPlugin.Skills;
 using com.IvanMurzak.ReflectorNet.Utils;
 using com.IvanMurzak.Unity.MCP.Editor.Utils;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -189,6 +190,7 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
             SetupMcpServerSection(root);
             SetupAiAgentSection(root);
             SetupToolsSection(root);
+            SetupSkillsSection(root);
             SetupPromptsSection(root);
             SetupResourcesSection(root);
             ConfigureAgents(root);
@@ -900,6 +902,55 @@ namespace com.IvanMurzak.Unity.MCP.Editor.UI
                     .Subscribe(_ => UpdateStats())
                     .AddTo(_disposables);
             }).AddTo(_disposables);
+        }
+
+        private void SetupSkillsSection(VisualElement root)
+        {
+            var labelPath = root.Q<Label>("labelSkillsOutputPath");
+            var inputPath = root.Q<TextField>("inputSkillsRootFolder");
+            var toggleAutoGenerate = root.Q<Toggle>("toggleAutoGenerateSkills");
+            var btnGenerate = root.Q<Button>("btnGenerateSkills");
+
+            if (inputPath == null || toggleAutoGenerate == null || btnGenerate == null)
+                return;
+
+            const string skillsOutputPathTooltip =
+                "Root folder path where skill markdown files will be generated. " +
+                "The recommended default location is \"SKILLS\". " +
+                "AI Game Developer will also create a nested folder named \"unity-editor\" inside it.";
+
+            if (labelPath != null) labelPath.tooltip = skillsOutputPathTooltip;
+            inputPath.tooltip = skillsOutputPathTooltip;
+
+            inputPath.SetValueWithoutNotify(UnityMcpPluginEditor.SkillsRootFolder);
+            toggleAutoGenerate.SetValueWithoutNotify(UnityMcpPluginEditor.GenerateSkillFiles);
+
+            inputPath.RegisterValueChangedCallback(evt =>
+            {
+                UnityMcpPluginEditor.SkillsRootFolder = evt.newValue;
+                UnityMcpPluginEditor.Instance.Save();
+            });
+
+            toggleAutoGenerate.RegisterValueChangedCallback(evt =>
+            {
+                UnityMcpPluginEditor.GenerateSkillFiles = evt.newValue;
+                UnityMcpPluginEditor.Instance.Save();
+            });
+
+            btnGenerate.RegisterCallback<ClickEvent>(evt =>
+            {
+                var tools = UnityMcpPluginEditor.Instance.Tools;
+                if (tools == null)
+                {
+                    Logger.LogWarning("Cannot generate skill files: Tools manager is not available.");
+                    return;
+                }
+                new SkillFileGenerator(UnityMcpPluginEditor.Instance.Logger).Generate(
+                    tools: tools.GetAllTools(),
+                    rootFolder: "unity-editor",
+                    basePath: UnityMcpPluginEditor.SkillsRootFolder
+                );
+            });
         }
 
         private void SetupPromptsSection(VisualElement root)
