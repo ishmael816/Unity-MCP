@@ -12,7 +12,6 @@
 #if UNITY_EDITOR
 using System.IO;
 using System.Threading.Tasks;
-using com.IvanMurzak.McpPlugin.Skills;
 using com.IvanMurzak.Unity.MCP.Editor.Utils;
 using UnityEditor;
 using UnityEngine;
