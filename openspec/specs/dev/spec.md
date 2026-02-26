@@ -712,12 +712,16 @@ returns:
 - [ ] 在 CodeMaker 中端到端测试 Prompt 驱动的 ReAct 流程
 
 ### Phase C — 验证模块调优
-- [ ] 调优截图分析 Prompt（GameView + SceneView）
-- [ ] 实现 `scene-save-backup` / `scene-restore-backup`
-- [ ] 完善错误修复策略（增量 vs 全量的自动判断）
+- [x] 调优截图分析 Prompt（GameView + SceneView） → 已在 `DevAgent.cs` Prompt 中内置视觉分析框架
+- [x] 实现 `scene-save-backup` / `scene-restore-backup` → `Scene.Backup.Save.cs` / `Scene.Backup.Restore.cs`
+- [x] 完善错误修复策略（增量 vs 全量的自动判断） → 已在 `DevAgent.cs` Prompt 中定义策略表
 
-### Phase D — 集成测试 & 打磨
-- [ ] 道路生成工具端到端测试（≥5 次完整流程）
+### Phase D — 集成测试（道路生成工具端到端）
+- [ ] 在 CodeMaker 中加载 `react-dev-agent` + `road-generation-tool` Prompt
+- [ ] 触发 Phase 1: SPEC — 用户输入"帮我开发一个道路生成工具"，验证 Agent 生成技术 Spec
+- [ ] 触发 Phase 2: BUILD — 确认 Spec 后，Agent 自动生成代码并处理编译循环
+- [ ] 触发 Phase 3: VERIFY — Agent 自动执行验证（截图 + 日志分析 + 单元测试）
+- [ ] 触发 Phase 4: DELIVER — Agent 交付最终报告
 - [ ] 边界情况测试（编译超时、无限循环、上下文溢出）
 - [ ] 文档完善、使用指南
 

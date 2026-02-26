@@ -126,15 +126,17 @@ before proceeding to Phase 2. Maximum 3 revision rounds.
 **Goal**: Confirm the generated tool works correctly at runtime.
 
 **Verification Sequence**:
-1. Save current scene: `scene-save`
-2. Execute the tool:
+1. Backup current scene: `scene-save-backup` (creates a restorable snapshot)
+2. Save current scene: `scene-save`
+3. Execute the tool:
    - **Preferred**: Use `script-execute` (Roslyn dynamic execution, no Domain Reload)
    - **If needed**: Use `editor-application-set-state` to enter PlayMode
 3. Capture evidence:
    - `screenshot-scene-view` (width=1280, height=720)
    - `screenshot-game-view` (if in PlayMode)
    - `console-get-logs` (maxEntries=50, lastMinutes=2)
-4. Exit PlayMode if entered: `editor-application-set-state`
+5. Exit PlayMode if entered: `editor-application-set-state`
+6. If verification failed catastrophically, restore scene: `scene-restore-backup`
 
 **Analysis Framework**:
 
@@ -189,6 +191,8 @@ before proceeding to Phase 2. Maximum 3 revision rounds.
 | Find GameObject | `gameobject-find` | |
 | Add Component | `gameobject-component-add` | |
 | Save scene | `scene-save` | Always save before verification |
+| Backup scene | `scene-save-backup` | Create restorable backup before risky changes |
+| Restore scene | `scene-restore-backup` | Revert to backup if verification fails |
 | Save agent context | `agent-task-save` | Persist state across Domain Reload |
 | Load agent context | `agent-task-load` | Recover after Domain Reload |
 | Create folders | `assets-create-folders` | For project structure setup |
